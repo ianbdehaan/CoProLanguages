@@ -1,47 +1,70 @@
 file = open('./example.txt')
-string = file.read()
+expression = file.read()
 numeric = ['0','1','2','3','4','5','6','7','8','9']
-token_names = ['parenthesis', 'lambda', 'var']
-def tokenize_and_approve(string,level,reading_var = False):
-    char = string[0]
+token_names = ['space', 'left-parenthesis', 'right-parenthesis', 'lambda', 'var']
+def tokenize_and_approve(expression,reading_var = False):
+    char = expression[0]
+    if char == ' ':
+        return (True, 0, reading_var)
     if char == '(':
-        level += 1
-        return (0, level, reading_var)
+        return (True, 1, reading_var)
     elif char == ')':
-        level -= 1
-        return (0, level, reading_var)
+        return (True, 2, reading_var)
     elif char == '\\':
-        return (1, level, reading_var)
+        return (True, 3, reading_var)
     elif char.isalpha():
         reading_var = True
-        return (2, level, reading_var)
+        return (True, 4, reading_var)
     elif char.isnumeric():
         if reading_var:
-            return (2, level, reading_var)
+            return (True, 4, reading_var)
         else:
-            return False
+            return (False, 'error: variable starting with numeric character', reading_var)
     else:
-        return False
-    if level < 0:
-        return False
+        return (False, f'error: invalid character found in the expression ({char})', reading_var)
 
-def iterate_string(string):
+def iterate_expression(expression):
     tokenization = []
     reading_var = False
-    level = 0
-    while len(string) > 1:
-        output = tokenize_and_approve(string, level, reading_var)
-        if output:
-            token, level, reading_var = output 
+    while len(expression) > 1:
+        valid, value, reading_var = tokenize_and_approve(expression, reading_var)
+        if not valid:
+            print(value)
+            break
         else:
-            print('error')
-        tokenization.append(token)
-        string = string[1:]
-        print(tokenization)
-        print(level)
-    if level != 0:
-        print('error')
+            tokenization.append(value)
+            expression = expression[1:]
     return tokenization
 
-tokenization = iterate_string(string)
+def lexical_analysis(tokenization, expression):
+    lexemes = []
+    start_lexeme = 0
+    for idx in range(1,len(tokenization)): 
+        if (tokenization[idx] != tokenization[idx-1]) or (tokenization[idx-1] in (1,2)):
+            lexemes.append((token_names[tokenization[idx-1]], expression[start_lexeme:idx]))
+            start_lexeme = idx
+        if ((idx==len(tokenization)-1)):
+            lexemes.append((token_names[tokenization[idx]], expression[start_lexeme:idx+1]))
+    return lexemes
+
+def expression(lexemes, idx = 0):
+    print('enter <expr>')
+    if lexemes[idx][0] == 'left-parenthesis':
+        expression(lexemes, idx+1)
+        if lexemes[idx][0] == 'right-parenthesis':
+            expression(lexemes, idx+1)
+    elif lexemes[idx][0] == 'var':
+        if lexemes[idx+1][0] == 'var':
+            expression(lexemes, idx+1)
+    elif lexemes[idx][0] == 'lambda':
+        if lexemes[idx+1][0] == 'var':
+            expression(lexemes, idx+2)
+    else:
+        print('error')
+    if idx != len(lexemes)-1:
+        expression(lexemes,idx)
+
+tokenization = iterate_expression(expression)
+print(expression)
+print(lexical_analysis(tokenization,expression))
     
