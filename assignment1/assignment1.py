@@ -1,14 +1,13 @@
-file = open('./example.txt')
-expression = file.read()
-numeric = ['0','1','2','3','4','5','6','7','8','9']
-token_names = ['space', 'left-parenthesis', 'right-parenthesis', 'lambda', 'var']
 def tokenize_and_approve(expression,reading_var = False):
     char = expression[0]
     if char == ' ':
+        reading_var = False
         return (True, 0, reading_var)
     if char == '(':
+        reading_var = False
         return (True, 1, reading_var)
     elif char == ')':
+        reading_var = False
         return (True, 2, reading_var)
     elif char == '\\':
         return (True, 3, reading_var)
@@ -45,26 +44,77 @@ def lexical_analysis(tokenization, expression):
             start_lexeme = idx
         if ((idx==len(tokenization)-1)):
             lexemes.append((token_names[tokenization[idx]], expression[start_lexeme:idx+1]))
+    lexemes.append(('end', ''))
+    #removing spaces as they're not necessary moving forward
+    lexeme_idx = 0
+    while lexeme_idx < len(lexemes):
+        if lexemes[lexeme_idx][0] == 'space':
+            del lexemes[lexeme_idx]
+        else:
+            lexeme_idx += 1
+
     return lexemes
 
-def expression(lexemes, idx = 0):
-    print('enter <expr>')
-    if lexemes[idx][0] == 'left-parenthesis':
-        expression(lexemes, idx+1)
-        if lexemes[idx][0] == 'right-parenthesis':
-            expression(lexemes, idx+1)
-    elif lexemes[idx][0] == 'var':
-        if lexemes[idx+1][0] == 'var':
-            expression(lexemes, idx+1)
-    elif lexemes[idx][0] == 'lambda':
-        if lexemes[idx+1][0] == 'var':
-            expression(lexemes, idx+2)
-    else:
-        print('error')
-    if idx != len(lexemes)-1:
-        expression(lexemes,idx)
+def expr(trace = False):
+    if trace: print('enter <expr>')
+    tree = []
+    global next_token
+    global lexemes
+    #checking for <expr> ::= (<expr>)
+    if lexemes[next_token][0] == 'left-parenthesis':
+        tree.append(lexemes[next_token])
+        next_token += 1
+        if trace: print(f'next token is {lexemes[next_token][0]} next lexeme is {lexemes[next_token][1]}')
+        #if trace: print('<expr>::= (<expr>)')
+        tree.append(expr())
+        if lexemes[next_token][0] == 'right-parenthesis':
+            tree.append(lexemes[next_token])
+            next_token += 1
+            if trace: print(f'next token is {lexemes[next_token][0]} next lexeme is {lexemes[next_token][1]}')
+        else:
+            if trace: print('error')
+    #checking for <expr> ::= <var>
+    elif lexemes[next_token][0] == 'var':
+        tree.append(lexemes[next_token])
+        if trace: print('enter <var>\nexit<var>')
+        next_token += 1
+        if trace: print(f'next token is {lexemes[next_token][0]} next lexeme is {lexemes[next_token][1]}')
+    #checking for <expr> ::= \ <var> <expr>
+    elif lexemes[next_token][0] == 'lambda':
+        tree.append(lexemes[next_token])
+        next_token += 1
+        if trace: print(f'next token is {lexemes[next_token][0]} next lexeme is {lexemes[next_token][1]}')
+        if lexemes[next_token][0] == 'var':
+            tree.append(lexemes[next_token])
+            if trace: print("enter <var>\nexit <var>")
+            next_token += 1
+            if trace: print(f'next token is {lexemes[next_token][0]} next lexeme is {lexemes[next_token][1]}')
+            tree.append(expr())
+        else:
+            if trace: print('error')
+    #catching wrong productions
+    elif lexemes[next_token][0] != 'end':
+        if trace: print('error')
+    
+    #checking for <expr> ::= <expr><expr>
+    if lexemes[next_token][0] in ['left-parenthesis', 'var', 'lambda']:
+        tree = [tree]
+        tree.append(expr())
+    if trace: print('exit <expr>')
+    return tree
 
+file = open('./example.txt')
+expression = file.read()
+print(f'expression: {expression}')
+numeric = ['0','1','2','3','4','5','6','7','8','9']
+token_names = ['space', 'left-parenthesis', 'right-parenthesis', 'lambda', 'var']
 tokenization = iterate_expression(expression)
-print(expression)
-print(lexical_analysis(tokenization,expression))
+print(f'tokenization: {tokenization}')
+lexemes = lexical_analysis(tokenization, expression)
+print(f'lexemes:\n {lexemes}\n')
+next_token = 0
+trace = False
+if trace: print(f'next token is {lexemes[next_token][0]} next lexeme is {lexemes[next_token][1]}')
+print(f'tree:\n {expr()}')
+
     
