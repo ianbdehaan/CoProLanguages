@@ -45,6 +45,7 @@ def lexical_analysis(tokenization, expression):
         if ((idx==len(tokenization)-1)):
             lexemes.append((token_names[tokenization[idx]], expression[start_lexeme:idx+1]))
     lexemes.append(('end', ''))
+
     #removing spaces as they're not necessary moving forward
     lexeme_idx = 0
     while lexeme_idx < len(lexemes):
@@ -103,18 +104,22 @@ def expr(trace = False):
     if trace: print('exit <expr>')
     return tree
 
+#open file and read it
 file = open('./example.txt')
 expression = file.read()
 print(f'expression: {expression}')
-numeric = ['0','1','2','3','4','5','6','7','8','9']
+#tokenize the expression
 token_names = ['space', 'left-parenthesis', 'right-parenthesis', 'lambda', 'var']
 tokenization = iterate_expression(expression)
 print(f'tokenization: {tokenization}')
+#conduct lexical analysis
 lexemes = lexical_analysis(tokenization, expression)
 print(f'lexemes:\n {lexemes}\n')
+#apply recursive-descent parsing to get the tree
 next_token = 0
 trace = False
 if trace: print(f'next token is {lexemes[next_token][0]} next lexeme is {lexemes[next_token][1]}')
 print(f'tree:\n {expr()}')
+# TODO apply simplification rules 
 
     
