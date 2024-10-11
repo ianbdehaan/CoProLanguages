@@ -188,43 +188,46 @@ def main():
     global lexemes
     global next_token
     global token_names
+    file = False
+    #error handling for opening the file
     try:
         file = open(sys.argv[1])
-    except:
-        sys.stderr.write(f'file {argv[1]} not found\n')
-    expressions = file.read()
-    #token names keep track of the names of each token, names are in the correct idx position
-    #i.e. token -> 0 is named space as token_names[0] == 'space' 
-    token_names = ['space', 'left-parenthesis', 'right-parenthesis', 'lambda', 'var']
-    program_status = 0
-    for expression in expressions.replace('\r\n','\n').replace('\r \n', '\n').split('\n')[:-1]:
-        sys.stdout.write(f'simplified expression for "{expression}":\n')#, end='')
+        expressions = file.read()
+        #token names keep track of the names of each token, names are in the correct idx position
+        #i.e. token -> 0 is named space as token_names[0] == 'space' 
+        token_names = ['space', 'left-parenthesis', 'right-parenthesis', 'lambda', 'var']
+        program_status = 0
+        for expression in expressions.replace('\r\n','\n').replace('\r \n', '\n').split('\n')[:-1]:
+            sys.stdout.write(f'simplified expression for "{expression}":\n')#, end='')
 
-        #tokenize the expression
-        tokenization = iterate_expression(expression)
+            #tokenize the expression
+            tokenization = iterate_expression(expression)
 
-        if tokenization != False:
-            #conduct lexical analysis if tokenization went well
-            lexemes = lexical_analysis(tokenization, expression)
+            if tokenization != False:
+                #conduct lexical analysis if tokenization went well
+                lexemes = lexical_analysis(tokenization, expression)
 
-            #apply recursive-descent parsing to get the tree
-            next_token = 0
-            tree = expr()
+                #apply recursive-descent parsing to get the tree
+                next_token = 0
+                tree = expr()
 
-            #check if the tree is valid
-            if check_if_valid_tree(tree):
-                #check if there are unparsed lexemes
-                if (lexemes[next_token][0] != 'end'):
-                    sys.stderr.write(f'error: unparsed character at {lexemes[next_token][1]}\n')
-                    program_status = 1
+                #check if the tree is valid
+                if check_if_valid_tree(tree):
+                    #check if there are unparsed lexemes
+                    if (lexemes[next_token][0] != 'end'):
+                        sys.stderr.write(f'error: unparsed character at {lexemes[next_token][1]}\n')
+                        program_status = 1
+                    else:
+                        #if the expression was valid we print its simplest form
+                        tree = remove_parenthesis(tree)
+                        sys.stdout.write(f'{display_std(tree)}\n')
                 else:
-                    #if the expression was valid we print its simplest form
-                    tree = remove_parenthesis(tree)
-                    sys.stdout.write(f'{display_std(tree)}\n')
+                    program_status = 1
             else:
                 program_status = 1
-        else:
-            program_status = 1
+    except:
+        sys.stderr.write('The code should be run with a command line argument specifying a valid file')
+        program_status = 1
     #exits with 0 if all the expressions were valid and 1 otherwise
     sys.exit(program_status)
 
