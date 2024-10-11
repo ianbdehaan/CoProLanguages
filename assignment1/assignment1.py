@@ -25,10 +25,11 @@ def tokenize_and_approve(expression,reading_var = False):
 def iterate_expression(expression):
     tokenization = []
     reading_var = False
-    while len(expression) > 1:
+    while len(expression) >= 1:
         valid, value, reading_var = tokenize_and_approve(expression, reading_var)
         if not valid:
             print(value)
+            tokenization = False
             break
         else:
             tokenization.append(value)
@@ -62,19 +63,6 @@ def expr():
     global lexemes
     #checking for <expr> ::= (<expr>)
     if lexemes[next_token][0] in ['left-parenthesis', 'var', 'lambda']:
-        # if lexemes[next_token][0] == 'left-parenthesis':
-        #     tree.append(lexemes[next_token])
-        #     next_token += 1
-        #     tree.append(expr())
-        #     if lexemes[next_token][0] == 'right-parenthesis':
-        #         tree.append(lexemes[next_token])
-        #         next_token += 1
-        #     else:
-        #         print('error: no closing parenthesis')
-        # elif lexemes[next_token][0] == 'var':
-        #     tree.append(lexemes[next_token])
-        #     next_token += 1
-
         while lexemes[next_token][0] in ['left-parenthesis', 'var', 'lambda']:
             if lexemes[next_token][0] == 'left-parenthesis':
                 tree.append(lexemes[next_token])
@@ -85,6 +73,7 @@ def expr():
                     next_token += 1
                 else:
                     print('error: no closing parenthesis')
+                    return False
             #checking for <expr> ::= <var>
             elif lexemes[next_token][0] == 'var':
                 tree.append(lexemes[next_token])
@@ -98,47 +87,40 @@ def expr():
                     tree.append(expr())
                 else:
                     print('error: no var after lambda')
+                    return False
             if len(tree)>1:
                 tree = [tree]
         return tree
+    elif lexemes[next_token][0] == 'end':
+        return tree
     else:
-        print('error: invalid sequence')
-    #checking for <expr> ::= \ <var> <expr>
-    # elif lexemes[next_token][0] == 'lambda':
-    #     tree.append(lexemes[next_token])
-    #     next_token += 1
-    #     if lexemes[next_token][0] == 'var':
-    #         tree.append(lexemes[next_token])
-    #         next_token += 1
-    #         tree.append(expr())
-    #     else:
-    #         print('error: no var after lambda')
-    #catching wrong productions
-    # checking for <expr> ::= <expr><expr>
-    # while lexemes[next_token][0] in ['left-parenthesis', 'var', 'lambda']:
-    #     tree = [tree]
-    #     tree.append(expr())
+        print(f'error: invalid sequence at {lexemes[next_token][1]}')
+        return False
 
 def display_std(tree):
     string = ''
-    for idx in range(len(tree)):
-        if type(tree[idx]) == list:
-            string += '('
-            string += display_std(tree[idx])
-            string += ')'
-        else:
-            if tree[idx][0] == 'var':
-                if string:
-                    if string[-1].isalnum():
-                        string += f' {tree[idx][1]}'
+    if type(tree) == tuple:
+        string = tree[1]
+    else:
+        for idx in range(len(tree)):
+            # print(tree[idx])
+            if type(tree[idx]) == list:
+                string += '('
+                string += display_std(tree[idx])
+                string += ')'
+            else:
+                if tree[idx][0] == 'var':
+                    if string:
+                        if string[-1].isalnum():
+                            string += f' {tree[idx][1]}'
+                        else:
+                            string += f'{tree[idx][1]}'
                     else:
                         string += f'{tree[idx][1]}'
+                elif tree[idx][0] in ['left-parenthesis', 'right-parenthesis']:
+                    pass
                 else:
                     string += f'{tree[idx][1]}'
-            elif tree[idx][0] in ['left-parenthesis', 'right-parenthesis']:
-                pass
-            else:
-                string += f'{tree[idx][1]}'
     return string
 
                 
@@ -158,7 +140,9 @@ def display_std(tree):
             
 def check_and_remove_parenthesis(tree):
     idx = 0
-    if len(tree)<2:
+    if len(tree) == 0:
+        return tree
+    elif len(tree)==1:
         tree = check_and_remove_parenthesis(tree[0])
     while idx < len(tree):
         if len(tree[idx])>1:
@@ -195,27 +179,37 @@ def check_and_remove_parenthesis(tree):
 #         return result
 #     else:
 #         return expression
-
+def check_if_valid_tree(tree):
+    is_valid_tree = True
+    for element in tree:
+        if element == False:
+            is_valid_tree = False
+        elif type(element) == list:
+            is_valid_tree = is_valid_tree and check_if_valid_tree(element)
+    return is_valid_tree
         
 #open file and read it
 file = open('./example.txt')
-expression = file.read()
-# print(f'expression: {expression}')
-#tokenize the expression
+expressions = file.read()
 token_names = ['space', 'left-parenthesis', 'right-parenthesis', 'lambda', 'var']
-tokenization = iterate_expression(expression)
-# print(f'tokenization: {tokenization}')
-#conduct lexical analysis
-lexemes = lexical_analysis(tokenization, expression)
-# print(f'lexemes:\n {lexemes}\n')
-#apply recursive-descent parsing to get the tree
-next_token = 0
-tree = expr()
-print(tree)
-# print(tree)
-tree = check_and_remove_parenthesis(tree)
-print(tree)
-# print(f'tree:\n {tree}\n')
-# TODO apply simplification rules 
-# print(beta_reduction(tree))
-print(display_std(tree))
+for expression in expressions.replace('\r\n','\n').replace('\r \n', '\n').split('\n')[:-1]:
+    print(f'simplified expression for "{expression}":')#, end='')
+    # print(f'expression: {expression}')
+    #tokenize the expression
+    tokenization = iterate_expression(expression)
+    # print(f'tokenization: {tokenization}')
+    #conduct lexical analysis
+    if tokenization != False:
+        lexemes = lexical_analysis(tokenization, expression)
+        # print(f'lexemes:\n {lexemes}\n')
+        #apply recursive-descent parsing to get the tree
+        next_token = 0
+        tree = expr()
+        if check_if_valid_tree(tree):
+            # print(tree)
+            tree = check_and_remove_parenthesis(tree)
+            # print(tree)
+            # print(f'tree:\n {tree}\n')
+            # TODO apply simplification rules 
+            # print(beta_reduction(tree))
+            print(display_std(tree))
