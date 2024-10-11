@@ -2,7 +2,7 @@ Group:  40
 Names:  Ian de Haan 
         Angela van Delft 
 
-The pogram is working correctly for all the inputs we tried 
+The program is working correctly for all the inputs we tried 
 Deviations of the assignment:
 -The program does not support a dot (.) after the lambda abstraction as we used our available time to prioritize the other aspects of the assignment.
 
