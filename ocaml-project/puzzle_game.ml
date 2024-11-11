@@ -1,7 +1,11 @@
 let rec print_board n counter board=
   match board with
   | [] -> print_endline ""
-  | h::t -> if h = 0 then print_string "   " else Printf.printf "%3d" h;
+  | h::t -> if h = 0 then print_string "   "
+            else if (h<10) then (print_string "  "; print_int h)
+            else if (h<100) then (print_char ' '; print_int h)
+            else (print_int h)
+            ;
             if Int.equal (counter mod n) (n-1) then print_char '\n' else print_char ' ';
             print_board n (counter+1) t 
 
@@ -39,7 +43,6 @@ let () =
   print_string "Enter the size of the puzzle:";
   let n = int_of_string (read_line ()) in
   let power = (check_power n 2) in
-  Random.self_init ();
   if power >=0 then
     let nmbrs = build_nmbrs n [] in
     let board = (board_generator [] nmbrs) in
