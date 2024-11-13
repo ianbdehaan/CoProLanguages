@@ -6,11 +6,16 @@ let get_2d idx_1d n=
 let get_1d idxs_2d n=
   (idxs_2d.(0)+idxs_2d.(1)*n)
 
+let rec print_horizontal_line counter n =
+  if counter=(n*4+1) then print_string "-\n"
+  else begin print_char '-'; print_horizontal_line (counter+1) n end
+
 let rec print_board n counter board=
+  if counter=0 then begin (print_horizontal_line 0 n); print_char '|'; end else ();
   match board with
-  | [] -> print_endline ""
+  | [] -> print_char '\b'; print_horizontal_line 0 n; print_endline ""
   | h::t -> if h = 0 then print_string "   " else Printf.printf "%3d" h;
-            if Int.equal (counter mod n) (n-1) then print_char '\n' else print_char ' ';
+            if Int.equal (counter mod n) (n-1) then print_string " |\n|" else print_char ' ';
             print_board n (counter+1) t 
 
 let rec build_nmbrs n nmbrs=
